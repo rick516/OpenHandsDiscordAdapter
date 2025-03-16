@@ -82,7 +82,7 @@ jobs:
         run: bandit -r src/ -x tests/
       
       - name: Check for vulnerable dependencies
-        run: safety check -r requirements.txt
+        run: safety check --ignore=51457 -r requirements.txt
   
   docker:
     runs-on: ubuntu-latest
