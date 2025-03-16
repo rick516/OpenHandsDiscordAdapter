@@ -23,9 +23,9 @@ services:
     stdin_open: true
     tty: true
 
-  openhands-discord:
+  OpenHandsDiscordAdapter:
     build: .
-    container_name: openhands-discord
+    container_name: OpenHandsDiscordAdapter
     restart: unless-stopped
     env_file:
       - .env

@@ -1,0 +1,223 @@
+# OpenHandsDiscordAdapter Project Rules
+
+## Project Structure
+- `src/bot/`: Contains Discord bot implementation
+- `src/adapter/`: Contains OpenHands adapter implementation
+- `src/utils/`: Contains utility functions
+- `src/config.py`: Central configuration management
+- `src/__main__.py`: Entry point for the application
+- `tests/`: Test directory
+  - `tests/unit/`: Unit tests for individual components
+  - `tests/integration/`: Integration tests for component interactions
+  - `tests/end_to_end/`: End-to-end tests for full system flow
+  - `tests/conftest.py`: Pytest fixtures and configuration
+
+## Coding Patterns
+
+### Discord Bot Commands
+When adding new commands to the Discord bot, follow this pattern:
+```python
+@bot.command(name="command_name")
+async def command_function(ctx, *args):
+    """Command docstring with description and args."""
+    # Send a thinking message
+    thinking_msg = await ctx.send("⏳ Processing...")
+    
+    try:
+        # Call adapter function
+        result = await openhands_adapter.some_function(*args)
+        
+        # Format and send response
+        await thinking_msg.edit(content="✅ Success message")
+        # or
+        await thinking_msg.delete()
+        await ctx.send(embed=format_result(result))
+    except Exception as e:
+        logger.error(f"Error in command: {e}")
+        await thinking_msg.edit(content=f"❌ Error: {str(e)}")
+```
+
+### Error Handling
+Always wrap adapter calls in try-except blocks and provide informative error messages:
+```python
+try:
+    # Call adapter function
+    result = await openhands_adapter.some_function(*args)
+except Exception as e:
+    logger.error(f"Error: {e}")
+    # Handle the error appropriately
+```
+
+### Improved Error Handling with Retry
+For operations that might experience transient failures, use retry logic:
+```python
+from src.utils.retry import retry_operation
+
+@retry_operation(max_retries=3, delay=2)
+async def some_operation(*args):
+    # Operation that might fail temporarily
+    # Will retry up to 3 times with 2 second delay
+    # ...
+```
+
+### Response Formatting
+Use the formatter module for consistent Discord message formatting:
+```python
+from src.utils.formatter import format_result, format_status, format_tasks_list
+
+# Format a task result
+embed = format_result(result)
+
+# Format a task status
+embed = format_status(status)
+
+# Format a list of tasks
+embed = format_tasks_list(tasks)
+```
+
+### Input Validation
+Always validate user input to prevent injection attacks:
+```python
+def validate_input(input_string):
+    # Check for invalid characters, patterns, etc.
+    if contains_invalid_chars(input_string):
+        raise ValueError("Input contains invalid characters")
+    
+    # Check input length
+    if len(input_string) > MAX_INPUT_LENGTH:
+        raise ValueError(f"Input exceeds maximum length of {MAX_INPUT_LENGTH}")
+    
+    return input_string
+```
+
+### Permission Checking
+Check permissions before executing privileged commands:
+```python
+def check_permissions(user_id, command):
+    # Check if user has required permissions
+    if command in PRIVILEGED_COMMANDS and user_id not in ADMIN_USERS:
+        raise PermissionError(f"User does not have permission to use {command}")
+```
+
+## Testing Patterns
+
+### Unit Test Example
+```python
+import pytest
+from unittest.mock import Mock, patch
+from src.utils.formatter import format_result
+
+def test_format_result():
+    # Arrange
+    mock_result = {"output": "test output", "status": "completed"}
+    
+    # Act
+    embed = format_result(mock_result)
+    
+    # Assert
+    assert embed.title == "Task Result"
+    assert "test output" in embed.description
+    assert embed.color.value == 0x00FF00  # Green color
+```
+
+### Async Test Example
+```python
+import pytest
+import pytest_asyncio
+from unittest.mock import AsyncMock, patch
+from src.adapter.openhands_adapter import OpenHandsAdapter
+
+@pytest.mark.asyncio
+async def test_adapter_execute_task():
+    # Arrange
+    adapter = OpenHandsAdapter()
+    mock_process = AsyncMock()
+    mock_process.communicate.return_value = (b"task output", b"")
+    mock_process.returncode = 0
+    
+    # Act
+    with patch('asyncio.create_subprocess_exec', return_value=mock_process):
+        result = await adapter.execute_task("test task")
+    
+    # Assert
+    assert result["status"] == "completed"
+    assert result["output"] == "task output"
+```
+
+### Integration Test Example
+```python
+import pytest
+import pytest_asyncio
+from unittest.mock import AsyncMock, patch
+from src.bot.bot import process_command
+from src.adapter.openhands_adapter import OpenHandsAdapter
+
+@pytest.mark.asyncio
+async def test_bot_adapter_integration():
+    # Arrange
+    mock_adapter = AsyncMock(spec=OpenHandsAdapter)
+    mock_adapter.execute_task.return_value = {"output": "test output", "status": "completed"}
+    mock_ctx = AsyncMock()
+    
+    # Act
+    with patch('src.bot.bot.openhands_adapter', mock_adapter):
+        await process_command(mock_ctx, "test task")
+    
+    # Assert
+    mock_adapter.execute_task.assert_called_once_with("test task")
+    mock_ctx.send.assert_called()  # Check that a response was sent
+```
+
+## Environment Setup
+The project requires the following environment variables:
+- `DISCORD_TOKEN`: Discord bot token
+- `DISCORD_CLIENT_ID`: Discord client ID
+- `COMMAND_PREFIX`: Prefix for bot commands (default: `!oh `)
+- `OPENHANDS_CLI_PATH`: Path to the OpenHands CLI
+- `OPENHANDS_WORKDIR`: Directory for OpenHands workspaces
+- `LLM_API_KEY`: API key for the language model
+- `LLM_MODEL`: Model identifier
+- `SANDBOX_RUNTIME_CONTAINER_IMAGE`: Docker image for the sandbox runtime
+- `OPENHANDS_CHAT_CHANNEL`: Name of the Discord channel for OpenHands chat
+- `MAX_CONCURRENT_TASKS`: Maximum number of concurrent tasks
+- `TASK_TIMEOUT_SECONDS`: Timeout for tasks in seconds
+- `LOG_LEVEL`: Logging level (default: `INFO`)
+- `RETRY_COUNT`: Number of retries for failed operations (default: 3)
+- `RETRY_DELAY`: Delay between retries in seconds (default: 2)
+
+## Known Workarounds
+
+### Discord Message Size Limits
+Discord has a 2000 character limit for messages and 6000 character limit for embeds. For large responses:
+1. Split the response into chunks
+2. Use multiple embeds or fields
+3. Consider using file attachments for very large outputs
+
+### Long-Running Tasks
+For tasks that may take a long time:
+1. Send immediate acknowledgment
+2. Provide periodic updates if possible
+3. Set appropriate timeouts
+4. Use the task queue to manage execution
+
+### Rate Limiting
+To avoid Discord API rate limits:
+1. Implement cooldowns on frequently used commands
+2. Use bulk operations when possible (e.g., edit message instead of delete + send)
+3. Handle rate limit errors gracefully with exponential backoff
+
+## Testing Tips
+- Use a dedicated test Discord server
+- Create a separate test bot for development
+- Test with different types of inputs and edge cases
+- Verify error handling by intentionally causing errors
+- Use pytest markers to categorize tests (unit, integration, slow)
+- Run tests with coverage to identify untested code paths
+
+## Deployment Notes
+- Use Docker for consistent deployment
+- Ensure all environment variables are properly set
+- Monitor logs for errors and performance issues
+- Consider using a process manager for production deployments
+- Implement health checks for container orchestration
+- Use CI/CD for automated testing and deployment 

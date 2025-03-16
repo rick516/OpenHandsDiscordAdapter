@@ -165,45 +165,40 @@ def format_tasks_list(tasks: List[dict]) -> discord.Embed:
     return embed
 
 
-def format_help() -> discord.Embed:
-    """Format the help message as a Discord embed.
+def format_help(command_prefix):
+    """Format help message.
     
+    Args:
+        command_prefix: The command prefix used by the bot.
+        
     Returns:
-        A Discord embed.
+        str: Formatted help message.
     """
-    embed = discord.Embed(
-        title="OpenHands Discord Bot Help",
-        description="This bot allows you to interact with OpenHands through Discord.",
-        color=discord.Color.blue()
-    )
+    help_text = f"**OpenHands Discord Bot Help**\n\n"
     
-    embed.add_field(
-        name="Commands",
-        value=(
-            "**!oh task <description>** - Create a new task\n"
-            "**!oh status [task_id]** - Check task status\n"
-            "**!oh help** - Show this help message"
-        ),
-        inline=False
-    )
+    # Add prefix commands section
+    help_text += "**Prefix Commands:**\n"
+    help_text += f"`{command_prefix}task <description>` - Create a new task\n"
+    help_text += f"`{command_prefix}status [task_id]` - Check task status or list all tasks\n"
+    help_text += f"`{command_prefix}help` - Show this help message\n\n"
     
-    embed.add_field(
-        name="Conversation",
-        value=(
-            "You can also interact with OpenHands in a conversation by sending messages in a DM "
-            "or in a channel named `openhands-chat`."
-        ),
-        inline=False
-    )
+    # Add slash commands section
+    help_text += "**Slash Commands:**\n"
+    help_text += "`/task <description>` - Create a new task\n"
+    help_text += "`/status [task_id]` - Check task status or list all tasks\n"
+    help_text += "`/tasks` - List all your tasks\n"
+    help_text += "`/help` - Show this help message\n\n"
     
-    embed.add_field(
-        name="Examples",
-        value=(
-            "**!oh task Create a simple Flask web app with a login page**\n"
-            "**!oh status task_12345678**\n"
-            "**!oh status** (shows all your tasks)"
-        ),
-        inline=False
-    )
+    # Add examples section
+    help_text += "**Examples:**\n"
+    help_text += f"`{command_prefix}task Create a Python script that calculates fibonacci numbers`\n"
+    help_text += f"`{command_prefix}status 1234`\n"
+    help_text += "or\n"
+    help_text += "`/task Create a Python script that calculates fibonacci numbers`\n"
+    help_text += "`/status 1234`\n\n"
     
-    return embed 
+    # Add chat mode section
+    help_text += "**Chat Mode:**\n"
+    help_text += "You can also chat directly with OpenHands in DMs or in the designated channel.\n"
+    
+    return help_text 
