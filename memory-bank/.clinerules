@@ -220,4 +220,55 @@ To avoid Discord API rate limits:
 - Monitor logs for errors and performance issues
 - Consider using a process manager for production deployments
 - Implement health checks for container orchestration
-- Use CI/CD for automated testing and deployment 
+- Use CI/CD for automated testing and deployment
+
+## Development Workflow
+- New features or bug fixes are developed in separate branches
+- Branch names use prefixes like "feat/", "fix/", "docs/", "refactor/"
+- Commit messages use prefixes like "feat:", "fix:", "docs:", "refactor:"
+- Create a pull request and get code reviewed
+- Ensure CI/CD checks pass
+- Merge after review approval
+
+## Testing Strategy
+- Unit tests are created for all major functionalities
+- Integration tests are created for interactions between major components
+- External dependencies are isolated using mocks
+- Test coverage goal is 80%
+
+## Documentation Rules
+- README should contain basic setup and usage instructions
+- API documentation is auto-generated from Docstrings
+- Add detailed comments for complex logic
+
+## Error Handling
+- Define appropriate exception classes and use them
+- Provide clear and helpful error messages to users
+- Set appropriate log level and record debug information
+
+## Security Measures
+- Use environment variables to manage sensitive information
+- Perform thorough input validation
+- Check for dependency package vulnerabilities
+
+## Performance Considerations
+- Use asynchronous processing for responsiveness
+- Monitor resource usage
+- Long-running tasks are processed in the background
+
+## Deployment
+- Use Docker containers for consistent deployment
+- Use environment variables for different environments
+- Use CI/CD pipelines for automated deployment
+
+## Branch Protection Settings
+- Direct pushes to the `main` branch are prohibited
+- Changes are reflected only through pull requests
+- At least one review approval is required
+- The following CI/CD checks must pass:
+  - lint: code style and quality check
+  - test: unit tests and integration tests
+  - security: security vulnerability check
+  - docker: Docker image build test
+- The branch must be kept up-to-date before merging
+- Administrators must also follow these rules 

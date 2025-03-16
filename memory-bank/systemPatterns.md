@@ -186,4 +186,69 @@ For multi-language support, the system implements:
 1. Documentation in multiple languages (English and Japanese)
 2. Planned localization of bot messages and responses
 3. Future support for user language preferences
-4. Locale-aware formatting for dates, times, and numbers 
+4. Locale-aware formatting for dates, times, and numbers
+
+## システムアーキテクチャ
+
+OpenHandsDiscordAdapterは、Discord APIとOpenHandsを統合するアダプターとして機能します。システムは以下のコンポーネントで構成されています：
+
+1. **Discord Bot Interface**: Discord APIと通信し、ユーザーコマンドを処理します
+2. **Command Handler**: ユーザーコマンドを解析し、適切なアクションにルーティングします
+3. **Task Manager**: OpenHandsタスクの作成、管理、ステータス追跡を行います
+4. **Chat Handler**: OpenHandsとのチャット機能を提供します
+5. **Configuration Manager**: 環境変数と設定を管理します
+
+## 主要な技術的決定
+
+1. **モジュール分割**: 機能ごとに明確に分離されたモジュール構造を採用し、保守性と拡張性を向上
+2. **非同期処理**: Discord.pyとasyncioを使用した非同期処理により、複数のリクエストを効率的に処理
+3. **環境変数による設定**: 設定は環境変数を通じて行い、デプロイ環境に応じた柔軟な構成が可能
+4. **Docker化**: コンテナ化によりデプロイと環境の一貫性を確保
+5. **CI/CD自動化**: GitHub Actionsを使用した継続的インテグレーションと継続的デリバリーの実装
+
+## 使用中の設計パターン
+
+1. **アダプターパターン**: Discord APIとOpenHands APIの間の互換性を提供
+2. **コマンドパターン**: ユーザーリクエストをカプセル化し、適切なハンドラーに転送
+3. **ファクトリーパターン**: タスクとレスポンスの生成を抽象化
+4. **オブザーバーパターン**: タスクステータスの変更を監視し、ユーザーに通知
+5. **シングルトンパターン**: 設定マネージャーなど、単一インスタンスが必要なコンポーネントに使用
+
+## コンポーネントの関係
+
+```mermaid
+graph TD
+    User[Discord User] -->|Commands/Messages| DiscordBot[Discord Bot]
+    DiscordBot -->|Parse Commands| CommandHandler[Command Handler]
+    CommandHandler -->|Task Commands| TaskManager[Task Manager]
+    CommandHandler -->|Chat Messages| ChatHandler[Chat Handler]
+    TaskManager -->|Create/Manage Tasks| OpenHands[OpenHands API]
+    ChatHandler -->|Send/Receive Messages| OpenHands
+    ConfigManager[Configuration Manager] -->|Provide Settings| DiscordBot
+    ConfigManager -->|Provide Settings| TaskManager
+    ConfigManager -->|Provide Settings| ChatHandler
+```
+
+## 開発ワークフロー
+
+1. **フィーチャーブランチ開発**: 新機能やバグ修正は個別のブランチで開発
+2. **プルリクエスト**: コードレビューとCI/CDチェックを通過後にマージ
+3. **自動テスト**: ユニットテストと統合テストによる品質保証
+4. **コードスタイル**: Black、isort、flake8、mypyによるコード品質の維持
+5. **セキュリティチェック**: Banditとsafetyによるセキュリティ脆弱性のチェック
+
+## ブランチプロテクション設定
+
+リポジトリでは以下のブランチプロテクションルールが設定されています：
+
+1. **プルリクエストの必須化**: `main`ブランチへの直接プッシュは禁止され、すべての変更はPRを通して行う必要があります
+2. **レビュー承認の必須化**: 少なくとも1人のレビュー承認が必要です
+3. **ステータスチェックの必須化**: 以下のCI/CDワークフローのチェックが成功する必要があります
+   - lint: コードスタイルと品質チェック
+   - test: ユニットテストと統合テスト
+   - security: セキュリティ脆弱性チェック
+   - docker: Dockerイメージのビルドテスト
+4. **ブランチの最新状態の必須化**: マージ前にブランチを最新の状態に保つ必要があります
+5. **管理者にも適用**: 管理者もこれらのルールに従う必要があります
+
+これにより、コードの品質を維持し、安定したメインブランチを確保します 
