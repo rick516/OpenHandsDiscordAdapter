@@ -114,9 +114,28 @@ jobs:
       - name: Check PR title
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
+          # Check for conventional commit format with more detailed validation
           if ! echo "$PR_TITLE" | grep -E '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:' > /dev/null; then
             echo "PR title should follow the conventional commit format: type(scope): description"
             echo "Current title: $PR_TITLE"
+            echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+            echo "Example: feat(auth): add login functionality"
+            exit 1
+          fi
+          
+          # Check for empty description after the colon
+          if echo "$PR_TITLE" | grep -E '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:[ ]*$' > /dev/null; then
+            echo "PR title must include a description after the colon"
+            echo "Current title: $PR_TITLE"
+            echo "Example: feat(auth): add login functionality"
+            exit 1
+          fi
+          
+          # Check for description starting with lowercase letter
+          if ! echo "$PR_TITLE" | grep -E '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:[ ]+[a-z]' > /dev/null; then
+            echo "Description must start with a lowercase letter"
+            echo "Current title: $PR_TITLE"
+            echo "Example: feat(auth): add login functionality (not 'Add login functionality')"
             exit 1
           fi
       
