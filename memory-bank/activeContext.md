@@ -1,15 +1,18 @@
 # Active Context
 
 ## Current Focus
-The current focus is on enhancing the OpenHandsDiscordAdapter system with modern Discord features and internationalization support. Previous focus was on analyzing the system and implementing testing capabilities. The system now has the following components:
+The current focus is on enhancing the OpenHandsDiscordAdapter system with modern Discord features, internationalization support, and improving test coverage. Previous focus was on analyzing the system and implementing testing capabilities. The system now has the following components:
 
 1. Discord Bot (`src/bot/bot.py`) with slash command support
 2. OpenHands Adapter (`src/adapter/openhands_adapter.py`)
 3. Response Formatter (`src/utils/formatter.py`)
 4. Configuration Management (`src/config.py`)
 5. Documentation in English and Japanese
+6. Unit tests for core components (in progress)
 
 ## Recent Changes
+- Fixed formatter tests by updating the `format_status` and `format_tasks_list` functions to handle string results and include task IDs in descriptions
+- Added a comprehensive `.gitignore` file to exclude common Python-related files and directories from version control
 - Implementation of Discord slash commands (`/help`, `/task`, `/status`, `/tasks`)
 - Creation of Japanese README (README_ja.md) for internationalization
 - Updated help formatter to include slash command information
@@ -26,11 +29,10 @@ The current focus is on enhancing the OpenHandsDiscordAdapter system with modern
 - Added branch protection rules
 
 ## Next Steps
-1. **Implement Unit Testing Framework**:
-   - Set up test directory structure with `tests/unit/`, `tests/integration/`, etc.
-   - Install necessary testing packages (`pytest`, `pytest-asyncio`, `pytest-mock`)
-   - Create test fixtures for mocking external dependencies
-   - Implement unit tests for core components (Formatter, Adapter, Bot)
+1. **Continue Implementing Unit Testing Framework**:
+   - Implement more unit tests for core components (Formatter, Adapter, Bot)
+   - Increase test coverage for edge cases and error handling
+   - Add integration tests for component interactions
 
 2. **Address Design Gaps**:
    - Enhance error handling with retry mechanisms and graceful degradation

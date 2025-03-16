@@ -16,6 +16,7 @@
 - ✅ Docker containerization
 - ✅ Environment variable handling
 - ✅ Basic error handling
+- ✅ Version control setup with .gitignore
 
 ### Planning & Documentation
 - ✅ System architecture documentation
@@ -23,6 +24,13 @@
 - ✅ Design review and gap analysis
 - ✅ Unit testing strategy development
 - ✅ Internationalization support (Japanese README)
+
+### Testing
+- ✅ Test infrastructure setup
+- ✅ Unit tests for Formatter (basic functionality)
+- ❌ Unit tests for OpenHands Adapter
+- ❌ Unit tests for Discord Bot
+- ❌ Integration tests
 
 ## What Needs Improvement
 
@@ -107,8 +115,9 @@ The system is functional with both traditional prefix commands and modern slash 
 - ✅ Internationalization foundation (Japanese README)
 
 ### Milestone 4: Testing Implementation (In Progress)
-- ⚠️ Test infrastructure setup
-- ❌ Unit tests for Formatter
+- ✅ Test infrastructure setup
+- ✅ Basic unit tests for Formatter
+- ❌ Complete unit tests for Formatter
 - ❌ Unit tests for OpenHands Adapter
 - ❌ Unit tests for Discord Bot
 - ❌ Integration tests

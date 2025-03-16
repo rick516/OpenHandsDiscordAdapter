@@ -11,6 +11,7 @@
   - `tests/integration/`: Integration tests for component interactions
   - `tests/end_to_end/`: End-to-end tests for full system flow
   - `tests/conftest.py`: Pytest fixtures and configuration
+- `.gitignore`: Specifies files and directories to be excluded from version control
 
 ## Coding Patterns
 
@@ -70,9 +71,13 @@ embed = format_result(result)
 
 # Format a task status
 embed = format_status(status)
+# Note: format_status can handle both dictionary and string results
+# It also uses task_id if available, otherwise falls back to id
 
 # Format a list of tasks
 embed = format_tasks_list(tasks)
+# Note: format_tasks_list includes task IDs in the description
+# and handles empty task lists with a "No tasks found" message
 ```
 
 ### Input Validation
@@ -166,6 +171,49 @@ async def test_bot_adapter_integration():
     # Assert
     mock_adapter.execute_task.assert_called_once_with("test task")
     mock_ctx.send.assert_called()  # Check that a response was sent
+```
+
+### Unit Test Example for Formatter
+```python
+import pytest
+from unittest.mock import Mock
+import discord
+from src.utils.formatter import format_status, format_tasks_list
+
+def test_format_status():
+    """Test the format_status function."""
+    # Given
+    status = {
+        "task_id": "test-123",
+        "status": "completed",
+        "description": "Test task",
+        "created_at": "2023-01-01T12:00:00Z",
+        "updated_at": "2023-01-01T12:05:00Z",
+        "result": "Task completed successfully",
+    }
+
+    # When
+    result = format_status(status)
+
+    # Then
+    assert isinstance(result, discord.Embed)
+    assert result.title == "Task Status"
+    assert "test-123" in result.description
+    assert "completed" in result.description
+    assert "Test task" in result.description
+
+def test_format_tasks_list_empty():
+    """Test the format_tasks_list function with empty list."""
+    # Given
+    tasks = []
+
+    # When
+    result = format_tasks_list(tasks)
+
+    # Then
+    assert isinstance(result, discord.Embed)
+    assert result.title == "Your Tasks"
+    assert "No tasks found" in result.description
 ```
 
 ## Environment Setup
@@ -272,3 +320,15 @@ To avoid Discord API rate limits:
   - docker: Docker image build test
 - The branch must be kept up-to-date before merging
 - Administrators must also follow these rules 
+
+## Version Control
+- Use `.gitignore` to exclude common Python-related files and directories:
+  - Python bytecode and cache files (`__pycache__/`, `*.py[cod]`)
+  - Distribution and packaging files (`build/`, `dist/`, `*.egg-info/`)
+  - Test and coverage reports (`.coverage`, `coverage.xml`, `.pytest_cache/`)
+  - Environment files (`.env`, `.venv/`, `env/`)
+  - IDE-specific files (`.idea/`, `.vscode/`)
+  - OS-specific files (`.DS_Store`, `Thumbs.db`)
+  - Log files (`*.log`)
+- Always run tests before committing changes
+- Follow the project's branching strategy and commit message conventions 

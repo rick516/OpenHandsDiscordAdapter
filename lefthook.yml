@@ -2,16 +2,19 @@
 pre-commit:
   parallel: true
   commands:
+    # コードフォーマットのチェック
     black:
       glob: "*.py"
       run: black --check {staged_files}
       fix: black {staged_files}
       stage_fixed: true
+    # インポート順のチェック
     isort:
       glob: "*.py"
       run: isort --check-only --profile black {staged_files}
       fix: isort --profile black {staged_files}
       stage_fixed: true
+    # コードスタイルのチェック
     flake8:
       glob: "*.py"
       run: flake8 {staged_files}
@@ -20,11 +23,18 @@ pre-commit:
 format:
   parallel: true
   commands:
+    # コードフォーマットのチェック
     black-format:
       glob: "*.py"
       run: black {staged_files}
       stage_fixed: true
+    # インポート順のフォーマット
     isort-format:
       glob: "*.py"
       run: isort --profile black {staged_files}
       stage_fixed: true 
+    # コードスタイルのチェック
+    flake8:
+      glob: "*.py"
+      run: flake8 {staged_files}
+      stage_fixed: true
