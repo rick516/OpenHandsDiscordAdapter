@@ -23,14 +23,14 @@ services:
     stdin_open: true
     tty: true
 
-  OpenHandsDiscordAdapter:
+  openhands-discord-adapter:
     build: 
       context: .
       dockerfile: Dockerfile
       args:
         - PYTHON_VERSION=3.12
         - USE_UV=true
-    container_name: OpenHandsDiscordAdapter
+    container_name: openhands-discord-adapter
     restart: unless-stopped
     env_file:
       - .env

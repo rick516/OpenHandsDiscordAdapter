@@ -1,7 +1,15 @@
 # Active Context
 
 ## Current Focus
-The current focus is on enhancing the OpenHandsDiscordAdapter system with modern Discord features, internationalization support, and improving test coverage. Previous focus was on analyzing the system and implementing testing capabilities. The system now has the following components:
+The current focus is on fixing a Docker build error in the CI/CD pipeline. The error occurs because the Docker repository name contains uppercase letters, which is not allowed by Docker. The specific error is:
+
+```
+ERROR: invalid tag "OpenHandsDiscordAdapter:test": repository name must be lowercase
+```
+
+This error is occurring in the GitHub Actions workflow when attempting to build the Docker image with the tag `OpenHandsDiscordAdapter:test`. Docker requires repository names to be lowercase, so we need to update the workflow configuration to use a lowercase tag name.
+
+Previous focus was on enhancing the OpenHandsDiscordAdapter system with modern Discord features, internationalization support, and improving test coverage. The system now has the following components:
 
 1. Discord Bot (`src/bot/bot.py`) with slash command support
 2. OpenHands Adapter (`src/adapter/openhands_adapter.py`)
@@ -11,6 +19,7 @@ The current focus is on enhancing the OpenHandsDiscordAdapter system with modern
 6. Unit tests for core components (in progress)
 
 ## Recent Changes
+- Identified Docker build error in CI/CD pipeline related to uppercase repository name
 - Fixed all mypy type annotation issues across the codebase:
   - Added proper return type annotations to all functions
   - Added type annotations for class attributes
@@ -36,49 +45,59 @@ The current focus is on enhancing the OpenHandsDiscordAdapter system with modern
 - Added branch protection rules
 
 ## Next Steps
-1. **Continue Implementing Unit Testing Framework**:
+1. **Fix Docker Build Error**:
+   - Update the GitHub Actions workflow to use lowercase repository name
+   - Ensure consistency between docker-compose.yml and CI/CD configuration
+   - Test the updated configuration to verify the fix
+
+2. **Continue Implementing Unit Testing Framework**:
    - Implement more unit tests for core components (Formatter, Adapter, Bot)
    - Increase test coverage for edge cases and error handling
    - Add integration tests for component interactions
 
-2. **Address Design Gaps**:
+3. **Address Design Gaps**:
    - Enhance error handling with retry mechanisms and graceful degradation
    - Implement security measures (input validation, permission checks, rate limiting)
    - Add performance optimizations (caching, pagination, async processing)
    - Develop monitoring and diagnostics capabilities
    - Expand internationalization support to system messages
 
-3. **Enhance Error Handling**:
+4. **Enhance Error Handling**:
    - Implement more robust error handling for OpenHands CLI failures
    - Add retry mechanisms for transient errors
    - Improve error messages for better user experience
 
-4. **Extend Command Set**:
+5. **Extend Command Set**:
    - Add commands for managing workspaces
    - Implement file upload/download capabilities
    - Add support for project management commands
 
-5. **Improve User Experience**:
+6. **Improve User Experience**:
    - Add interactive buttons for common actions
    - Implement progress indicators for long-running tasks
    - Enhance formatting of code snippets in Discord
 
-6. **Performance Optimization**:
+7. **Performance Optimization**:
    - Optimize task queue management
    - Implement caching for frequently used data
    - Add monitoring and logging for performance metrics
 
-7. **Documentation and Testing**:
+8. **Documentation and Testing**:
    - Complete system documentation
    - Implement planned unit and integration tests
    - Create user guides for Discord commands
 
-8. **CI/CD Pipeline**:
+9. **CI/CD Pipeline**:
    - Verify GitHub Actions workflow
    - Merge PR
    - Verify branch protection rules
 
 ## Active Decisions and Considerations
+
+### Docker Configuration
+- Docker repository names must be lowercase
+- Need to ensure consistency between local development and CI/CD environments
+- Consider standardizing on lowercase names throughout the project
 
 ### Testing Strategy
 - Use `pytest` as the primary testing framework

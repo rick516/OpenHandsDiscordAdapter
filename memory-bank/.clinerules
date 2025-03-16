@@ -13,6 +13,58 @@
   - `tests/conftest.py`: Pytest fixtures and configuration
 - `.gitignore`: Specifies files and directories to be excluded from version control
 
+## Docker Configuration
+
+### Docker Naming Conventions
+Docker has specific requirements for repository names:
+- Repository names must be lowercase
+- Repository names may contain lowercase letters, digits, and separators
+- Separators are defined as periods, dashes, or underscores
+- Repository names must start and end with an alphanumeric character
+
+Example of valid repository names:
+```
+openhands-discord-adapter:latest
+openhands_discord_adapter:test
+openhandsdiscordadapter:1.0
+```
+
+Example of invalid repository names:
+```
+OpenHandsDiscordAdapter:test  # Contains uppercase letters
+openhands-discord-adapter:    # Ends with a separator
+-openhands-discord-adapter:test  # Starts with a separator
+```
+
+### Docker Build in CI/CD
+When configuring Docker builds in CI/CD pipelines, ensure that:
+1. All repository names are lowercase
+2. The same naming conventions are used in both local development and CI/CD
+3. Docker Compose configurations match GitHub Actions workflow configurations
+
+Example fix for GitHub Actions workflow:
+```yaml
+# Before
+- name: Build Docker image
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: false
+    tags: OpenHandsDiscordAdapter:test  # Invalid: contains uppercase
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+
+# After
+- name: Build Docker image
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: false
+    tags: openhands-discord-adapter:test  # Valid: all lowercase
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
 ## Coding Patterns
 
 ### Type Annotations
@@ -248,19 +300,6 @@ def test_format_status() -> None:
     assert "test-123" in result.description
     assert "completed" in result.description
     assert "Test task" in result.description
-
-def test_format_tasks_list_empty() -> None:
-    """Test the format_tasks_list function with empty list."""
-    # Given
-    tasks = []
-
-    # When
-    result = format_tasks_list(tasks)
-
-    # Then
-    assert isinstance(result, discord.Embed)
-    assert result.title == "Your Tasks"
-    assert "No tasks found" in result.description
 ```
 
 ## Environment Setup
