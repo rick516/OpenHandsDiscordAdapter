@@ -4,7 +4,7 @@ Formatter Module
 This module provides utilities for formatting responses for Discord.
 """
 
-from typing import Any, Dict, List
+from typing import List
 
 import discord
 
@@ -164,14 +164,20 @@ def format_tasks_list(tasks: List[dict]) -> discord.Embed:
 
         embed.add_field(
             name=f"Task: {task.get('id')}",
-            value=f"**Description**: {task.get('description', 'No description')[:100]}\n{value}",
+            value=(
+                f"**Description**: {task.get('description', 'No description')[:100]}\n"
+                f"{value}"
+            ),
             inline=False,
         )
 
     if len(sorted_tasks) > 10:
         embed.add_field(
             name="Note",
-            value=f"Showing 10 of {len(sorted_tasks)} tasks. Use `!oh status <task_id>` to view a specific task.",
+            value=(
+                f"Showing 10 of {len(sorted_tasks)} tasks. "
+                "Use `!oh status <task_id>` to view a specific task."
+            ),
             inline=False,
         )
 
@@ -187,7 +193,7 @@ def format_help(command_prefix):
     Returns:
         str: Formatted help message.
     """
-    help_text = f"**OpenHands Discord Bot Help**\n\n"
+    help_text = "**OpenHands Discord Bot Help**\n\n"
 
     # Add prefix commands section
     help_text += "**Prefix Commands:**\n"

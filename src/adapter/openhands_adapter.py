@@ -5,14 +5,12 @@ This module provides an adapter for interacting with OpenHands.
 """
 
 import asyncio
-import json
 import os
-import subprocess
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
-from OpenHandsDiscord.config import (
+from src.config import (
     LLM_API_KEY,
     LLM_MODEL,
     OPENHANDS_CLI_PATH,

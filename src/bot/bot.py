@@ -18,12 +18,7 @@ from discord.ext import commands
 
 from src.adapter.openhands_adapter import openhands_adapter
 from src.config import COMMAND_PREFIX, DISCORD_TOKEN, OPENHANDS_CHAT_CHANNEL, Config
-from src.utils.formatter import (
-    format_help,
-    format_result,
-    format_status,
-    format_tasks_list,
-)
+from src.utils.formatter import format_help, format_status, format_tasks_list
 
 # Configure logging
 logging.basicConfig(
@@ -222,7 +217,8 @@ async def on_command_error(ctx, error):
             await ctx.send(f"❌ Error: {str(error)}")
     elif isinstance(error, commands.CommandNotFound):
         await ctx.send(
-            f"❌ Command not found. Use `{COMMAND_PREFIX}help` to see available commands."
+            f"❌ Command not found. Use `{COMMAND_PREFIX}help` "
+            "to see available commands."
         )
     else:
         logger.error(f"Command error: {error}")

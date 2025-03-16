@@ -1,7 +1,6 @@
 """Tests for the formatter module."""
 
 import discord
-import pytest
 
 from src.utils.formatter import format_help, format_status, format_tasks_list
 
