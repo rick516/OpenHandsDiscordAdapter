@@ -10,15 +10,20 @@ import json
 import logging
 import socketserver
 import threading
-from typing import Optional
+from typing import Any, Callable, Coroutine, List, Optional, Type, Union
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.adapter.openhands_adapter import openhands_adapter
+from src.adapter.openhands_adapter import OpenHandsAdapter
 from src.config import COMMAND_PREFIX, DISCORD_TOKEN, OPENHANDS_CHAT_CHANNEL, Config
-from src.utils.formatter import format_help, format_status, format_tasks_list
+from src.utils.formatter import (
+    format_help,
+    format_result,
+    format_status,
+    format_tasks_list,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -30,11 +35,19 @@ logger = logging.getLogger("OpenHandsDiscordAdapter")
 # Set up Discord bot
 intents = discord.Intents.default()
 intents.message_content = True
-intents.reactions = True
+
+intents.messages = True
+
+# Create OpenHands adapter
+
+openhands_adapter = OpenHandsAdapter()
 
 
 class OpenHandsBot(commands.Bot):
-    def __init__(self, config: Config):
+    """Discord bot for interacting with OpenHands."""
+
+    def __init__(self, config: Config) -> None:
+        """Initialize the bot."""
         super().__init__(
             command_prefix=COMMAND_PREFIX, intents=intents, help_command=None
         )
@@ -43,11 +56,12 @@ class OpenHandsBot(commands.Bot):
         # Start health check server
         self.start_health_check_server()
 
-    def start_health_check_server(self):
+    def start_health_check_server(self) -> None:
         """Start a simple HTTP server for health checks."""
 
         class HealthCheckHandler(http.server.SimpleHTTPRequestHandler):
-            def do_GET(self):
+            def do_GET(self) -> None:
+                """Handle GET requests."""
                 if self.path == "/health":
                     self.send_response(200)
                     self.send_header("Content-type", "application/json")
@@ -64,11 +78,12 @@ class OpenHandsBot(commands.Bot):
                     self.end_headers()
                     self.wfile.write(json.dumps({"error": "Not found"}).encode())
 
-            def log_message(self, format, *args):
-                # Suppress logging for health check requests
-                return
+            def log_message(self, format: str, *args: Any) -> None:
+                """Suppress logging for health check requests."""
+                pass
 
-        def run_server():
+        def run_server() -> None:
+            """Run the health check server."""
             with socketserver.TCPServer(("", 8000), HealthCheckHandler) as httpd:
                 httpd.serve_forever()
 
@@ -83,9 +98,12 @@ bot = OpenHandsBot(Config())
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     """Event handler for when the bot is ready."""
-    logger.info(f"Logged in as {bot.user.name} ({bot.user.id})")
+    if bot.user is not None:
+        logger.info(f"Logged in as {bot.user.name} ({bot.user.id})")
+    else:
+        logger.info("Logged in but user is None")
     logger.info(f"Command prefix: {COMMAND_PREFIX}")
 
     # Register slash commands
@@ -107,7 +125,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message) -> None:
     """Event handler for when a message is received."""
     # Ignore messages from the bot itself
     if message.author == bot.user:
@@ -119,7 +137,7 @@ async def on_message(message):
         and message.channel.name == OPENHANDS_CHAT_CHANNEL
     ):
         # Only process messages that don't start with the command prefix
-        if not message.content.startswith(bot.command_prefix):
+        if not message.content.startswith(str(bot.command_prefix)):
             async with message.channel.typing():
                 # Send a thinking message
                 thinking_msg = await message.channel.send("🤔 Thinking...")
@@ -147,7 +165,7 @@ async def on_message(message):
 
 
 @bot.command(name="task")
-async def create_task(ctx, *, description: str):
+async def create_task(ctx: commands.Context, *, description: str) -> None:
     """Create a new task.
 
     Args:
@@ -171,7 +189,7 @@ async def create_task(ctx, *, description: str):
 
 
 @bot.command(name="status")
-async def check_status(ctx, task_id: Optional[str] = None):
+async def check_status(ctx: commands.Context, task_id: Optional[str] = None) -> None:
     """Check task status.
 
     Args:
@@ -199,16 +217,16 @@ async def check_status(ctx, task_id: Optional[str] = None):
 
 
 @bot.command(name="help")
-async def show_help(ctx):
+async def show_help(ctx: commands.Context) -> None:
     """Show help information."""
     await ctx.send(format_help(COMMAND_PREFIX))
 
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
     """Event handler for command errors."""
     if isinstance(error, commands.MissingRequiredArgument):
-        if ctx.command.name == "task":
+        if ctx.command and ctx.command.name == "task":
             await ctx.send(
                 f"❌ Error: Missing task description\n"
                 f"Usage: `{COMMAND_PREFIX}task <description>`"
@@ -227,13 +245,13 @@ async def on_command_error(ctx, error):
 
 # Slash command implementations
 @bot.tree.command(name="help", description="Show help information")
-async def slash_help(interaction: discord.Interaction):
+async def slash_help(interaction: discord.Interaction) -> None:
     """Show help information."""
     await interaction.response.send_message(format_help(COMMAND_PREFIX))
 
 
 @bot.tree.command(name="task", description="Create a new task")
-async def slash_task(interaction: discord.Interaction, description: str):
+async def slash_task(interaction: discord.Interaction, description: str) -> None:
     """Create a new task."""
     await interaction.response.defer(thinking=True)
 
@@ -253,20 +271,20 @@ async def slash_task(interaction: discord.Interaction, description: str):
 
 @bot.tree.command(name="status", description="Check task status")
 @app_commands.describe(task_id="The ID of the task to check (optional)")
-async def slash_status(interaction: discord.Interaction, task_id: str = None):
+async def slash_status(
+    interaction: discord.Interaction, task_id: Optional[str] = None
+) -> None:
     """Check task status."""
     await interaction.response.defer(thinking=True)
 
     try:
         if task_id:
             # Get status of specific task
-            status = await openhands_adapter.get_task_status(
-                str(interaction.user.id), task_id
-            )
+            status = await openhands_adapter.get_task_status(task_id)
 
             # Format and send status
             formatted_status = format_status(status)
-            await interaction.followup.send(formatted_status)
+            await interaction.followup.send(embed=formatted_status)
         else:
             # Get all tasks for user
             tasks = await openhands_adapter.get_user_tasks(str(interaction.user.id))
@@ -277,15 +295,15 @@ async def slash_status(interaction: discord.Interaction, task_id: str = None):
 
             # Format and send tasks list
             formatted_tasks = format_tasks_list(tasks)
-            await interaction.followup.send(formatted_tasks)
+            await interaction.followup.send(embed=formatted_tasks)
     except Exception as e:
         logger.error(f"Error checking status: {e}")
         await interaction.followup.send(f"❌ Error: {str(e)}")
 
 
 @bot.tree.command(name="tasks", description="List all your tasks")
-async def slash_tasks(interaction: discord.Interaction):
-    """List all tasks."""
+async def slash_tasks(interaction: discord.Interaction) -> None:
+    """List all your tasks."""
     await interaction.response.defer(thinking=True)
 
     try:
@@ -298,17 +316,17 @@ async def slash_tasks(interaction: discord.Interaction):
 
         # Format and send tasks list
         formatted_tasks = format_tasks_list(tasks)
-        await interaction.followup.send(formatted_tasks)
+        await interaction.followup.send(embed=formatted_tasks)
     except Exception as e:
         logger.error(f"Error listing tasks: {e}")
         await interaction.followup.send(f"❌ Error: {str(e)}")
 
 
-async def main():
+async def main() -> None:
     """Main function to run the bot."""
     try:
         # Start the bot
-        await bot.start(DISCORD_TOKEN)
+        await bot.start(DISCORD_TOKEN if DISCORD_TOKEN is not None else "")
     except KeyboardInterrupt:
         # Handle keyboard interrupt
         logger.info("Keyboard interrupt received")

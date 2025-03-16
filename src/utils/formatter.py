@@ -95,7 +95,9 @@ def format_status(status: dict) -> discord.Embed:
     embed = discord.Embed(
         title="Task Status",
         description=f"Task: {task_id}\nStatus: {status.get('status', 'Unknown')}\nDescription: {status.get('description', 'No description')}",
-        color=status_colors.get(status.get("status"), discord.Color.light_grey()),
+        color=status_colors.get(
+            str(status.get("status", "")), discord.Color.light_grey()
+        ),
     )
 
     # Add result if available
@@ -210,7 +212,7 @@ def format_tasks_list(tasks: List[dict]) -> discord.Embed:
     return embed
 
 
-def format_help(command_prefix):
+def format_help(command_prefix: str) -> str:
     """Format help message.
 
     Args:

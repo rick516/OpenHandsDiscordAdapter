@@ -4,6 +4,7 @@ Configuration module for OpenHands Discord Integration.
 
 import os
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -40,8 +41,25 @@ MAX_CONCURRENT_TASKS = int(os.getenv("MAX_CONCURRENT_TASKS", "5"))
 TASK_TIMEOUT_SECONDS = int(os.getenv("TASK_TIMEOUT_SECONDS", "300"))  # 5 minutes
 
 
+class Config:
+    """Configuration class for OpenHands Discord Integration."""
+
+    def __init__(self) -> None:
+        """Initialize the configuration."""
+        self.discord_token: Optional[str] = DISCORD_TOKEN
+        self.command_prefix: str = COMMAND_PREFIX
+        self.openhands_cli_path: str = OPENHANDS_CLI_PATH
+        self.openhands_workdir: str = OPENHANDS_WORKDIR
+        self.llm_api_key: Optional[str] = LLM_API_KEY
+        self.llm_model: str = LLM_MODEL
+        self.sandbox_runtime_container_image: str = SANDBOX_RUNTIME_CONTAINER_IMAGE
+        self.openhands_chat_channel: str = OPENHANDS_CHAT_CHANNEL
+        self.max_concurrent_tasks: int = MAX_CONCURRENT_TASKS
+        self.task_timeout_seconds: int = TASK_TIMEOUT_SECONDS
+
+
 # Validate required environment variables
-def validate_config():
+def validate_config() -> None:
     """Validate that all required environment variables are set."""
     missing_vars = []
 

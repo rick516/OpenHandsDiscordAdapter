@@ -11,6 +11,13 @@ The current focus is on enhancing the OpenHandsDiscordAdapter system with modern
 6. Unit tests for core components (in progress)
 
 ## Recent Changes
+- Fixed all mypy type annotation issues across the codebase:
+  - Added proper return type annotations to all functions
+  - Added type annotations for class attributes
+  - Fixed issues with Optional types and None checks
+  - Added a Config class to centralize configuration
+  - Fixed issues with Discord API type compatibility
+  - Improved error handling for potentially None values
 - Fixed formatter tests by updating the `format_status` and `format_tasks_list` functions to handle string results and include task IDs in descriptions
 - Added a comprehensive `.gitignore` file to exclude common Python-related files and directories from version control
 - Implementation of Discord slash commands (`/help`, `/task`, `/status`, `/tasks`)
@@ -91,6 +98,7 @@ The current focus is on enhancing the OpenHandsDiscordAdapter system with modern
 - Continue using subprocess for OpenHands CLI execution
 - Maintain Docker-based deployment
 - Add testing dependencies to development environment
+- Improved type annotations throughout the codebase for better static analysis
 
 ### UX Decisions
 - Support both slash commands and prefix commands for backward compatibility

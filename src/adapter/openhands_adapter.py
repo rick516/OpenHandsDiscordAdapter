@@ -8,7 +8,7 @@ import asyncio
 import os
 import uuid
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Coroutine, Dict, List, Optional, Union, cast
 
 from src.config import (
     LLM_API_KEY,
@@ -23,19 +23,19 @@ from src.config import (
 class OpenHandsAdapter:
     """Adapter for interacting with OpenHands."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the OpenHands adapter."""
         self.active_sessions: Dict[str, dict] = {}
-        self.task_queue = asyncio.Queue()
+        self.task_queue: asyncio.Queue = asyncio.Queue()
         self.running = False
-        self.task_processor = None
+        self.task_processor: Optional[asyncio.Task] = None
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the task processor."""
         self.running = True
         self.task_processor = asyncio.create_task(self.process_tasks())
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the task processor."""
         self.running = False
         if self.task_processor:
@@ -133,7 +133,7 @@ class OpenHandsAdapter:
 
         return response
 
-    async def process_tasks(self):
+    async def process_tasks(self) -> None:
         """Process tasks from the queue."""
         while self.running:
             try:
@@ -180,9 +180,13 @@ class OpenHandsAdapter:
 
         # Set environment variables
         env = os.environ.copy()
-        env["LLM_API_KEY"] = LLM_API_KEY
-        env["LLM_MODEL"] = LLM_MODEL
-        env["SANDBOX_RUNTIME_CONTAINER_IMAGE"] = SANDBOX_RUNTIME_CONTAINER_IMAGE
+        env["LLM_API_KEY"] = LLM_API_KEY if LLM_API_KEY is not None else ""
+        env["LLM_MODEL"] = LLM_MODEL if LLM_MODEL is not None else ""
+        env["SANDBOX_RUNTIME_CONTAINER_IMAGE"] = (
+            SANDBOX_RUNTIME_CONTAINER_IMAGE
+            if SANDBOX_RUNTIME_CONTAINER_IMAGE is not None
+            else ""
+        )
 
         # Prepare command
         cmd = [
@@ -253,9 +257,13 @@ class OpenHandsAdapter:
 
         # Set environment variables
         env = os.environ.copy()
-        env["LLM_API_KEY"] = LLM_API_KEY
-        env["LLM_MODEL"] = LLM_MODEL
-        env["SANDBOX_RUNTIME_CONTAINER_IMAGE"] = SANDBOX_RUNTIME_CONTAINER_IMAGE
+        env["LLM_API_KEY"] = LLM_API_KEY if LLM_API_KEY is not None else ""
+        env["LLM_MODEL"] = LLM_MODEL if LLM_MODEL is not None else ""
+        env["SANDBOX_RUNTIME_CONTAINER_IMAGE"] = (
+            SANDBOX_RUNTIME_CONTAINER_IMAGE
+            if SANDBOX_RUNTIME_CONTAINER_IMAGE is not None
+            else ""
+        )
 
         # Prepare command
         cmd = [

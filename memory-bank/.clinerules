@@ -15,11 +15,57 @@
 
 ## Coding Patterns
 
+### Type Annotations
+Always use proper type annotations for functions and variables:
+```python
+from typing import Dict, List, Optional, Any, Union
+
+# Function with type annotations
+def process_data(data: Dict[str, Any], options: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Process data with optional configuration.
+    
+    Args:
+        data: The data to process
+        options: Optional configuration options
+        
+    Returns:
+        Processed data
+    """
+    if options is None:
+        options = []
+    # Process data
+    return processed_data
+
+# Variable type annotations
+user_id: str = "12345"
+active_tasks: Dict[str, dict] = {}
+task_queue: asyncio.Queue = asyncio.Queue()
+```
+
+### Handling Optional Values
+When dealing with values that might be None, always use proper handling:
+```python
+# For environment variables
+api_key = os.getenv("API_KEY")
+if api_key is None:
+    api_key = ""  # Default value for string environment variables
+
+# For dictionary access with potential None values
+status_color = status_colors.get(str(status.get("status", "")), default_color)
+
+# For function parameters
+def process_task(task_id: Optional[str] = None) -> None:
+    if task_id is None:
+        # Handle case when task_id is not provided
+        return
+    # Process specific task
+```
+
 ### Discord Bot Commands
 When adding new commands to the Discord bot, follow this pattern:
 ```python
 @bot.command(name="command_name")
-async def command_function(ctx, *args):
+async def command_function(ctx: commands.Context, *args: Any) -> None:
     """Command docstring with description and args."""
     # Send a thinking message
     thinking_msg = await ctx.send("⏳ Processing...")
@@ -55,7 +101,7 @@ For operations that might experience transient failures, use retry logic:
 from src.utils.retry import retry_operation
 
 @retry_operation(max_retries=3, delay=2)
-async def some_operation(*args):
+async def some_operation(*args: Any) -> Dict[str, Any]:
     # Operation that might fail temporarily
     # Will retry up to 3 times with 2 second delay
     # ...
@@ -83,7 +129,7 @@ embed = format_tasks_list(tasks)
 ### Input Validation
 Always validate user input to prevent injection attacks:
 ```python
-def validate_input(input_string):
+def validate_input(input_string: str) -> str:
     # Check for invalid characters, patterns, etc.
     if contains_invalid_chars(input_string):
         raise ValueError("Input contains invalid characters")
@@ -98,10 +144,11 @@ def validate_input(input_string):
 ### Permission Checking
 Check permissions before executing privileged commands:
 ```python
-def check_permissions(user_id, command):
+def check_permissions(user_id: str, command: str) -> bool:
     # Check if user has required permissions
     if command in PRIVILEGED_COMMANDS and user_id not in ADMIN_USERS:
         raise PermissionError(f"User does not have permission to use {command}")
+    return True
 ```
 
 ## Testing Patterns
@@ -112,7 +159,7 @@ import pytest
 from unittest.mock import Mock, patch
 from src.utils.formatter import format_result
 
-def test_format_result():
+def test_format_result() -> None:
     # Arrange
     mock_result = {"output": "test output", "status": "completed"}
     
@@ -133,7 +180,7 @@ from unittest.mock import AsyncMock, patch
 from src.adapter.openhands_adapter import OpenHandsAdapter
 
 @pytest.mark.asyncio
-async def test_adapter_execute_task():
+async def test_adapter_execute_task() -> None:
     # Arrange
     adapter = OpenHandsAdapter()
     mock_process = AsyncMock()
@@ -158,7 +205,7 @@ from src.bot.bot import process_command
 from src.adapter.openhands_adapter import OpenHandsAdapter
 
 @pytest.mark.asyncio
-async def test_bot_adapter_integration():
+async def test_bot_adapter_integration() -> None:
     # Arrange
     mock_adapter = AsyncMock(spec=OpenHandsAdapter)
     mock_adapter.execute_task.return_value = {"output": "test output", "status": "completed"}
@@ -180,7 +227,7 @@ from unittest.mock import Mock
 import discord
 from src.utils.formatter import format_status, format_tasks_list
 
-def test_format_status():
+def test_format_status() -> None:
     """Test the format_status function."""
     # Given
     status = {
@@ -202,7 +249,7 @@ def test_format_status():
     assert "completed" in result.description
     assert "Test task" in result.description
 
-def test_format_tasks_list_empty():
+def test_format_tasks_list_empty() -> None:
     """Test the format_tasks_list function with empty list."""
     # Given
     tasks = []
@@ -331,4 +378,14 @@ To avoid Discord API rate limits:
   - OS-specific files (`.DS_Store`, `Thumbs.db`)
   - Log files (`*.log`)
 - Always run tests before committing changes
-- Follow the project's branching strategy and commit message conventions 
+- Follow the project's branching strategy and commit message conventions
+
+## Type Checking
+- Use mypy for static type checking
+- Run `mypy src` before committing changes
+- Fix all type errors before merging
+- Use proper type annotations for all functions and variables
+- Handle Optional types correctly
+- Use Union types when a variable can have multiple types
+- Add type annotations to class attributes in __init__ methods
+- Use proper return type annotations, including -> None for functions that don't return a value 
