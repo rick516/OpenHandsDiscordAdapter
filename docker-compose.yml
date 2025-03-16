@@ -10,7 +10,7 @@ services:
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.28-nikolaik}
       #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of openhands-state for this user
-      - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-./workspace}
     ports:
       - "3000:3000"
     extra_hosts:
@@ -18,23 +18,38 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ~/.openhands-state:/.openhands-state
-      - ${WORKSPACE_BASE:-$PWD/workspace}:/opt/workspace_base
+      - ${WORKSPACE_BASE:-./workspace}:/opt/workspace_base
     pull_policy: build
     stdin_open: true
     tty: true
 
-  OpenHandsDiscordAdapter:
-    build: .
-    container_name: OpenHandsDiscordAdapter
+  openhands-discord-adapter:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.12
+        - USE_UV=true
+    container_name: openhands-discord-adapter
     restart: unless-stopped
     env_file:
       - .env
     volumes:
       - ./openhands_workspace:/app/openhands_workspace
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./.uv-cache:/root/.cache/uv
     networks:
       - openhands-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 networks:
   openhands-network:
     driver: bridge
+
+volumes:
+  workspace:
