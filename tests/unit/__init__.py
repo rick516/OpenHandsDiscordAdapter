@@ -1,1 +1,1 @@
-"""Unit tests for OpenHandsDiscordAdapter.""" 
+"""Unit tests for OpenHandsDiscordAdapter."""

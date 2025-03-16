@@ -5,24 +5,24 @@ This module provides the Discord bot for interacting with OpenHands.
 """
 
 import asyncio
-import logging
-from typing import Optional
-import threading
 import http.server
-import socketserver
 import json
+import logging
+import socketserver
+import threading
+from typing import Optional
 
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
 
 from src.adapter.openhands_adapter import openhands_adapter
-from src.config import DISCORD_TOKEN, COMMAND_PREFIX, OPENHANDS_CHAT_CHANNEL, Config
+from src.config import COMMAND_PREFIX, DISCORD_TOKEN, OPENHANDS_CHAT_CHANNEL, Config
 from src.utils.formatter import (
+    format_help,
     format_result,
     format_status,
     format_tasks_list,
-    format_help,
 )
 
 # Configure logging
@@ -37,71 +37,76 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.reactions = True
 
+
 class OpenHandsBot(commands.Bot):
     def __init__(self, config: Config):
-        super().__init__(command_prefix=COMMAND_PREFIX, intents=intents, help_command=None)
+        super().__init__(
+            command_prefix=COMMAND_PREFIX, intents=intents, help_command=None
+        )
         self.config = config
-        
+
         # Start health check server
         self.start_health_check_server()
 
     def start_health_check_server(self):
         """Start a simple HTTP server for health checks."""
+
         class HealthCheckHandler(http.server.SimpleHTTPRequestHandler):
             def do_GET(self):
-                if self.path == '/health':
+                if self.path == "/health":
                     self.send_response(200)
-                    self.send_header('Content-type', 'application/json')
+                    self.send_header("Content-type", "application/json")
                     self.end_headers()
                     health_data = {
-                        'status': 'ok',
-                        'version': '1.0.0',
-                        'discord_connected': True
+                        "status": "ok",
+                        "version": "1.0.0",
+                        "discord_connected": True,
                     }
                     self.wfile.write(json.dumps(health_data).encode())
                 else:
                     self.send_response(404)
-                    self.send_header('Content-type', 'application/json')
+                    self.send_header("Content-type", "application/json")
                     self.end_headers()
-                    self.wfile.write(json.dumps({'error': 'Not found'}).encode())
-                
+                    self.wfile.write(json.dumps({"error": "Not found"}).encode())
+
             def log_message(self, format, *args):
                 # Suppress logging for health check requests
                 return
-        
+
         def run_server():
             with socketserver.TCPServer(("", 8000), HealthCheckHandler) as httpd:
                 httpd.serve_forever()
-        
+
         # Start the health check server in a separate thread
         health_thread = threading.Thread(target=run_server, daemon=True)
         health_thread.start()
         logger.info("Health check server started on port 8000")
 
+
 # Initialize the bot
 bot = OpenHandsBot(Config())
+
 
 @bot.event
 async def on_ready():
     """Event handler for when the bot is ready."""
     logger.info(f"Logged in as {bot.user.name} ({bot.user.id})")
     logger.info(f"Command prefix: {COMMAND_PREFIX}")
-    
+
     # Register slash commands
     try:
         synced = await bot.tree.sync()
         logger.info(f"Synced {len(synced)} slash command(s)")
     except Exception as e:
         logger.error(f"Failed to sync slash commands: {e}")
-    
+
     # Start the OpenHands adapter
     await openhands_adapter.start()
-    
+
     # Set bot status
     await bot.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.listening,
-            name=f"{COMMAND_PREFIX}help | /help"
+            type=discord.ActivityType.listening, name=f"{COMMAND_PREFIX}help | /help"
         )
     )
 
@@ -112,37 +117,36 @@ async def on_message(message):
     # Ignore messages from the bot itself
     if message.author == bot.user:
         return
-    
+
     # Process DMs or messages in the OpenHands chat channel
     if isinstance(message.channel, discord.DMChannel) or (
-        isinstance(message.channel, discord.TextChannel) and 
-        message.channel.name == OPENHANDS_CHAT_CHANNEL
+        isinstance(message.channel, discord.TextChannel)
+        and message.channel.name == OPENHANDS_CHAT_CHANNEL
     ):
         # Only process messages that don't start with the command prefix
         if not message.content.startswith(bot.command_prefix):
             async with message.channel.typing():
                 # Send a thinking message
                 thinking_msg = await message.channel.send("🤔 Thinking...")
-                
+
                 try:
                     # Get response from OpenHands
                     response = await openhands_adapter.chat(
-                        str(message.author.id),
-                        message.content
+                        str(message.author.id), message.content
                     )
-                    
+
                     # Delete thinking message
                     await thinking_msg.delete()
-                    
+
                     # Send response
                     await message.channel.send(response)
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
                     await thinking_msg.edit(content=f"❌ Error: {str(e)}")
-            
+
             # Don't process commands
             return
-    
+
     # Process commands
     await bot.process_commands(message)
 
@@ -150,24 +154,21 @@ async def on_message(message):
 @bot.command(name="task")
 async def create_task(ctx, *, description: str):
     """Create a new task.
-    
+
     Args:
         description: The task description.
     """
     # Send a thinking message
     thinking_msg = await ctx.send("⏳ Creating task...")
-    
+
     try:
         # Create task
-        result = await openhands_adapter.create_task(
-            str(ctx.author.id),
-            description
-        )
-        
+        result = await openhands_adapter.create_task(str(ctx.author.id), description)
+
         # Send response
         await thinking_msg.edit(
             content=f"✅ Task created with ID: `{result['task_id']}`\n"
-                   f"Use `{COMMAND_PREFIX}status {result['task_id']}` to check the status."
+            f"Use `{COMMAND_PREFIX}status {result['task_id']}` to check the status."
         )
     except Exception as e:
         logger.error(f"Error creating task: {e}")
@@ -177,13 +178,13 @@ async def create_task(ctx, *, description: str):
 @bot.command(name="status")
 async def check_status(ctx, task_id: Optional[str] = None):
     """Check task status.
-    
+
     Args:
         task_id: The task ID. If not provided, shows all tasks.
     """
     # Send a thinking message
     thinking_msg = await ctx.send("⏳ Checking status...")
-    
+
     try:
         if task_id:
             # Get status of specific task
@@ -193,7 +194,7 @@ async def check_status(ctx, task_id: Optional[str] = None):
             # Get all tasks for user
             tasks = await openhands_adapter.get_user_tasks(str(ctx.author.id))
             embed = format_tasks_list(tasks)
-        
+
         # Send response
         await thinking_msg.delete()
         await ctx.send(embed=embed)
@@ -239,16 +240,15 @@ async def slash_help(interaction: discord.Interaction):
 async def slash_task(interaction: discord.Interaction, description: str):
     """Create a new task."""
     await interaction.response.defer(thinking=True)
-    
+
     try:
         task_id = await openhands_adapter.create_task(
-            str(interaction.user.id),
-            description
+            str(interaction.user.id), description
         )
-        
+
         response = f"✅ Task created with ID: `{task_id}`\n"
         response += "I'll notify you when it's complete."
-        
+
         await interaction.followup.send(response)
     except Exception as e:
         logger.error(f"Error creating task: {e}")
@@ -260,26 +260,25 @@ async def slash_task(interaction: discord.Interaction, description: str):
 async def slash_status(interaction: discord.Interaction, task_id: str = None):
     """Check task status."""
     await interaction.response.defer(thinking=True)
-    
+
     try:
         if task_id:
             # Get status of specific task
             status = await openhands_adapter.get_task_status(
-                str(interaction.user.id),
-                task_id
+                str(interaction.user.id), task_id
             )
-            
+
             # Format and send status
             formatted_status = format_status(status)
             await interaction.followup.send(formatted_status)
         else:
             # Get all tasks for user
             tasks = await openhands_adapter.get_user_tasks(str(interaction.user.id))
-            
+
             if not tasks:
                 await interaction.followup.send("You don't have any tasks yet.")
                 return
-            
+
             # Format and send tasks list
             formatted_tasks = format_tasks_list(tasks)
             await interaction.followup.send(formatted_tasks)
@@ -292,15 +291,15 @@ async def slash_status(interaction: discord.Interaction, task_id: str = None):
 async def slash_tasks(interaction: discord.Interaction):
     """List all tasks."""
     await interaction.response.defer(thinking=True)
-    
+
     try:
         # Get all tasks for user
         tasks = await openhands_adapter.get_user_tasks(str(interaction.user.id))
-        
+
         if not tasks:
             await interaction.followup.send("You don't have any tasks yet.")
             return
-        
+
         # Format and send tasks list
         formatted_tasks = format_tasks_list(tasks)
         await interaction.followup.send(formatted_tasks)
@@ -323,7 +322,7 @@ async def main():
     finally:
         # Stop the OpenHands adapter
         await openhands_adapter.stop()
-        
+
         # Close the bot
         if not bot.is_closed():
             await bot.close()
@@ -331,4 +330,4 @@ async def main():
 
 if __name__ == "__main__":
     # Run the bot
-    asyncio.run(main()) 
+    asyncio.run(main())

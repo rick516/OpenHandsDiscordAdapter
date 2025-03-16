@@ -1,8 +1,9 @@
 """Pytest configuration and fixtures."""
 
-import pytest
-import discord
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import discord
+import pytest
 
 
 @pytest.fixture
@@ -41,4 +42,4 @@ def mock_openhands_adapter():
     adapter.chat = AsyncMock()
     adapter.start = AsyncMock()
     adapter.stop = AsyncMock()
-    return adapter 
+    return adapter

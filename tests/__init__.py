@@ -1,1 +1,1 @@
-"""Test package for OpenHandsDiscordAdapter.""" 
+"""Test package for OpenHandsDiscordAdapter."""
