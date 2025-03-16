@@ -38,10 +38,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends tini && \
     if [ "$USE_UV" = "true" ]; then \
         apt-get install -y --no-install-recommends curl && \
-        curl -sSf https://astral.sh/uv/install.sh | sh; \
-    fi && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        curl -sSf https://astral.sh/uv/install.sh | sh && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # ビルドステージから依存関係をコピー
 COPY --from=builder /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
