@@ -11,34 +11,43 @@ A Discord bot that integrates with OpenHands to provide AI-powered task executio
 
 ## Prerequisites
 
-- Python 3.9 or higher
+- Python 3.12 or higher
 - Discord Developer Account
 - OpenHands CLI installed
 - LLM API key (Anthropic, OpenAI, or OpenRouter)
 
 ## Setup Instructions
 
-### 1. Discord Bot Setup
+### Using uv (Recommended)
 
-1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click "New Application" and give it a name
-3. Go to the "Bot" tab and click "Add Bot"
-4. Under "Privileged Gateway Intents", enable:
-   - Message Content Intent
-5. Copy your bot token (you'll need this for the `.env` file)
-6. Go to "OAuth2" > "URL Generator"
-7. Select the following scopes:
-   - `bot`
-   - `applications.commands`
-8. Select the following bot permissions:
-   - Send Messages
-   - Read Message History
-   - View Channels
-   - Embed Links
-   - Add Reactions
-9. Copy the generated URL and use it to invite the bot to your server
+[uv](https://github.com/astral-sh/uv) is a fast, reliable Python package installer and resolver. To set up the project with uv:
 
-### 2. Environment Setup
+1. Install uv:
+   ```bash
+   curl -sSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Run the setup script:
+   ```bash
+   ./scripts/setup_uv.sh
+   ```
+   
+   For development setup, include the `--dev` flag:
+   ```bash
+   ./scripts/setup_uv.sh --dev
+   ```
+
+3. Activate the virtual environment:
+   ```bash
+   source .venv/bin/activate
+   ```
+
+4. Deactivate the virtual environment:
+   ```bash
+   deactivate
+   ```
+
+### Using pip (Traditional)
 
 1. Clone this repository:
    ```

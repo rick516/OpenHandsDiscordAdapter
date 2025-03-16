@@ -7,13 +7,17 @@ This module provides the Discord bot for interacting with OpenHands.
 import asyncio
 import logging
 from typing import Optional
+import threading
+import http.server
+import socketserver
+import json
 
 import discord
 from discord.ext import commands
 from discord import app_commands
 
 from src.adapter.openhands_adapter import openhands_adapter
-from src.config import DISCORD_TOKEN, COMMAND_PREFIX, OPENHANDS_CHAT_CHANNEL
+from src.config import DISCORD_TOKEN, COMMAND_PREFIX, OPENHANDS_CHAT_CHANNEL, Config
 from src.utils.formatter import (
     format_result,
     format_status,
@@ -33,8 +37,49 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.reactions = True
 
-bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents, help_command=None)
+class OpenHandsBot(commands.Bot):
+    def __init__(self, config: Config):
+        super().__init__(command_prefix=COMMAND_PREFIX, intents=intents, help_command=None)
+        self.config = config
+        
+        # Start health check server
+        self.start_health_check_server()
 
+    def start_health_check_server(self):
+        """Start a simple HTTP server for health checks."""
+        class HealthCheckHandler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == '/health':
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    health_data = {
+                        'status': 'ok',
+                        'version': '1.0.0',
+                        'discord_connected': True
+                    }
+                    self.wfile.write(json.dumps(health_data).encode())
+                else:
+                    self.send_response(404)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+                
+            def log_message(self, format, *args):
+                # Suppress logging for health check requests
+                return
+        
+        def run_server():
+            with socketserver.TCPServer(("", 8000), HealthCheckHandler) as httpd:
+                httpd.serve_forever()
+        
+        # Start the health check server in a separate thread
+        health_thread = threading.Thread(target=run_server, daemon=True)
+        health_thread.start()
+        logger.info("Health check server started on port 8000")
+
+# Initialize the bot
+bot = OpenHandsBot(Config())
 
 @bot.event
 async def on_ready():
