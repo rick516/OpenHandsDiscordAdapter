@@ -11,10 +11,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -38,12 +38,11 @@ jobs:
   
   test:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -54,21 +53,22 @@ jobs:
           pip install -r requirements-dev.txt
       
       - name: Run tests
-        run: pytest --cov=src tests/
+        run: pytest --cov=src tests/ --cov-report=xml
       
       - name: Upload coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
+          file: ./coverage.xml
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
   
   security:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -86,18 +86,45 @@ jobs:
   
   docker:
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, security]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       
       - name: Build Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          tags: openhands-discord-adapter:test
+          tags: OpenHandsDiscordAdapter:test
           cache-from: type=gha
-          cache-to: type=gha,mode=max 
+          cache-to: type=gha,mode=max
+  
+  integration:
+    runs-on: ubuntu-latest
+    needs: [lint, test, security]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if ! echo "$PR_TITLE" | grep -E '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:' > /dev/null; then
+            echo "PR title should follow the conventional commit format: type(scope): description"
+            echo "Current title: $PR_TITLE"
+            exit 1
+          fi
+      
+      - name: Check branch is up to date with main
+        run: |
+          git fetch origin main
+          BEHIND_COUNT=$(git rev-list --count HEAD..origin/main)
+          if [ $BEHIND_COUNT -gt 0 ]; then
+            echo "Branch is behind main by $BEHIND_COUNT commits. Please merge or rebase with main."
+            exit 1
+          fi 

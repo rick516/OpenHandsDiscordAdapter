@@ -1,0 +1,22 @@
+[run]
+source = src
+omit =
+    src/__main__.py
+    */__init__.py
+    */tests/*
+    */venv/*
+    */env/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    except ImportError
+    def main
+
+[html]
+directory = coverage_html_report 
