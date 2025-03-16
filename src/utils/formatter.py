@@ -89,31 +89,39 @@ def format_status(status: dict) -> discord.Embed:
         )
         return embed
 
+    # Use task_id if available, otherwise fall back to id
+    task_id = status.get("task_id", status.get("id", "Unknown"))
+
     embed = discord.Embed(
-        title=f"Task: {status.get('id', 'Unknown')}",
-        description=status.get("description", "No description"),
+        title="Task Status",
+        description=f"Task: {task_id}\nStatus: {status.get('status', 'Unknown')}\nDescription: {status.get('description', 'No description')}",
         color=status_colors.get(status.get("status"), discord.Color.light_grey()),
     )
-
-    embed.add_field(name="Status", value=status.get("status", "Unknown"), inline=True)
 
     # Add result if available
     if status.get("result"):
         result = status["result"]
-        if result.get("success"):
-            output = result.get("output", "")
-            if len(output) > 1000:
-                embed.add_field(
-                    name="Output", value=output[:1000] + "...", inline=False
-                )
+        # Check if result is a dictionary or a string
+        if isinstance(result, dict):
+            if result.get("success"):
+                output = result.get("output", "")
+                if len(output) > 1000:
+                    embed.add_field(
+                        name="Output", value=output[:1000] + "...", inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name="Output", value=output or "No output", inline=False
+                    )
             else:
                 embed.add_field(
-                    name="Output", value=output or "No output", inline=False
+                    name="Error",
+                    value=result.get("error", "Unknown error"),
+                    inline=False,
                 )
         else:
-            embed.add_field(
-                name="Error", value=result.get("error", "Unknown error"), inline=False
-            )
+            # Handle string result
+            embed.add_field(name="Result", value=result, inline=False)
 
     return embed
 
@@ -127,23 +135,37 @@ def format_tasks_list(tasks: List[dict]) -> discord.Embed:
     Returns:
         A Discord embed.
     """
-    embed = discord.Embed(
-        title="Your Tasks",
-        description=f"Total: {len(tasks)} tasks",
-        color=discord.Color.blue(),
-    )
-
     if not tasks:
-        embed.add_field(
-            name="No Tasks", value="You don't have any tasks yet", inline=False
+        embed = discord.Embed(
+            title="Your Tasks",
+            description="No tasks found",
+            color=discord.Color.blue(),
         )
         return embed
+
+    # Create task summary for description
+    task_summary = []
+    for task in tasks:
+        # Use task_id if available, otherwise fall back to id
+        task_id = task.get("task_id", task.get("id", "Unknown"))
+        status = task.get("status", "Unknown")
+        task_summary.append(f"{task_id}: {status}")
+
+    description = f"Total: {len(tasks)} tasks\n" + "\n".join(task_summary)
+
+    embed = discord.Embed(
+        title="Your Tasks",
+        description=description,
+        color=discord.Color.blue(),
+    )
 
     # Sort tasks by creation time (newest first)
     sorted_tasks = sorted(tasks, key=lambda t: t.get("created_at", 0), reverse=True)
 
     # Limit to 10 tasks to avoid hitting Discord's limits
     for task in sorted_tasks[:10]:
+        # Use task_id if available, otherwise fall back to id
+        task_id = task.get("task_id", task.get("id", "Unknown"))
         status = task.get("status", "Unknown")
         status_emoji = {
             "pending": "⏳",
@@ -157,13 +179,17 @@ def format_tasks_list(tasks: List[dict]) -> discord.Embed:
         # Add result summary if available
         if task.get("result"):
             result = task["result"]
-            if result.get("success"):
-                value += "\n✅ Result: Success"
+            if isinstance(result, dict):
+                if result.get("success"):
+                    value += "\n✅ Result: Success"
+                else:
+                    value += f"\n❌ Error: {result.get('error', 'Unknown error')[:100]}"
             else:
-                value += f"\n❌ Error: {result.get('error', 'Unknown error')[:100]}"
+                # Handle string result
+                value += f"\n📝 Result: {str(result)[:100]}"
 
         embed.add_field(
-            name=f"Task: {task.get('id')}",
+            name=f"Task: {task_id}",
             value=(
                 f"**Description**: {task.get('description', 'No description')[:100]}\n"
                 f"{value}"
